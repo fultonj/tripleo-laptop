@@ -10,6 +10,21 @@ URL=https://cloud.centos.org/centos/7/images/$IMG.xz
 DOM=example.com
 OTH_IP=$(echo $IP | sed s/122/2/g )
 # -------------------------------------------------------
+if [[ ! -e ~/.ssh/id_rsa.pub ]]; then
+    echo "Please run ssh-keygen"
+    exit 1
+else
+    KEY=$(cat ~/.ssh/id_rsa.pub)
+fi
+if [[ ! -e ~/.ssh/config ]]; then
+    cat /dev/null > ~/.ssh/config
+    echo "StrictHostKeyChecking no" >> ~/.ssh/config
+    echo "UserKnownHostsFile=/dev/null" >> ~/.ssh/config
+    echo "LogLevel ERROR" >> ~/.ssh/config
+    chmod 0600 ~/.ssh/config
+    chmod 0700 ~/.ssh
+fi
+# -------------------------------------------------------
 sudo yum install -y libguestfs-tools xz kvm libvirt
 if [[ ! $(sudo systemctl status libvirtd) ]]; then
    sudo systemctl start libvirtd
@@ -21,22 +36,6 @@ if [[ ! $(sudo ls /var/lib/libvirt/images/$IMG) ]]; then
     unxz $IMG.xz
     sudo cp $IMG /var/lib/libvirt/images/
     # to download newer image run 'sudo rm /var/lib/libvirt/images/$IMG'
-fi
-# -------------------------------------------------------
-if [[ ! -e ~/.ssh/id_rsa.pub ]]; then
-    echo "Please run ssh-keygen"
-    exit 1
-else
-    KEY=$(cat ~/.ssh/id_rsa.pub)
-fi
-# -------------------------------------------------------
-if [[ ! -e ~/.ssh/config ]]; then
-    cat /dev/null > ~/.ssh/config
-    echo "StrictHostKeyChecking no" >> ~/.ssh/config
-    echo "UserKnownHostsFile=/dev/null" >> ~/.ssh/config
-    echo "LogLevel ERROR" >> ~/.ssh/config
-    chmod 0600 ~/.ssh/config
-    chmod 0700 ~/.ssh
 fi
 # -------------------------------------------------------
 if [[ ! $(sudo virsh net-list | grep ctlplane) ]]; then
