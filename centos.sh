@@ -24,7 +24,7 @@ if [[ ! -e ~/.ssh/config ]]; then
     chmod 0700 ~/.ssh
 fi
 # -------------------------------------------------------
-sudo yum install -y libguestfs-tools xz kvm libvirt
+sudo yum install -y libguestfs-tools xz libvirt
 if [[ ! $(sudo systemctl status libvirtd) ]]; then
    sudo systemctl start libvirtd
 fi
@@ -58,8 +58,8 @@ if [[ -e /var/lib/libvirt/images/$NAME.qcow2 ]]; then
     echo "Destroying old $NAME"
     if [[ $(sudo virsh list | grep centos) ]]; then
 	sudo virsh destroy $NAME
-	sudo virsh undefine $NAME
     fi
+    sudo virsh undefine $NAME
     sudo rm -f /var/lib/libvirt/images/$NAME.qcow2
 fi
 # -------------------------------------------------------
@@ -84,6 +84,7 @@ sudo virt-customize -a $NAME.qcow2 --root-password password:$PASSWD
 sudo virt-customize -a $NAME.qcow2  --hostname $NAME.$DOM
 sudo virt-customize -a $NAME.qcow2 --run-command 'cp /etc/sysconfig/network-scripts/ifcfg-eth{0,1} && sed -i s/DEVICE=.*/DEVICE=eth1/g /etc/sysconfig/network-scripts/ifcfg-eth1'
 sudo virt-customize -a $NAME.qcow2 --run-command 'sed -i -e "s/BOOTPROTO=.*/BOOTPROTO=none/g" -e "s/BOOTPROTOv6=.*/NM_CONTROLLED=no/g" -e "s/USERCTL=.*/IPADDR=THE_IP/g" -e "s/PEERDNS=.*/NETMASK=255.255.255.0/g" -e "s/IPV6INIT=.*/GATEWAY=192.168.122.1/g" -e "s/PERSISTENT_DHCLIENT=.*/DEFROUTE=yes/g" /etc/sysconfig/network-scripts/ifcfg-eth1'
+sudo virt-customize -a $NAME.qcow2 --run-command "sed -i s/THE_IP/$IP/g /etc/sysconfig/network-scripts/ifcfg-eth1"
 sudo virt-customize -a $NAME.qcow2 --run-command "mkdir /root/.ssh/; chmod 700 /root/.ssh/; echo $KEY > /root/.ssh/authorized_keys; chmod 600 /root/.ssh/authorized_keys; chcon system_u:object_r:ssh_home_t:s0 /root/.ssh ; chcon unconfined_u:object_r:ssh_home_t:s0 /root/.ssh/authorized_keys "
 popd
 
