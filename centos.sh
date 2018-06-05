@@ -2,8 +2,8 @@
 # -------------------------------------------------------
 IP=192.168.122.253
 NAME=centos
-RAM=10240
-CPU=2
+RAM=8192
+CPU=1
 PASSWD=abc123
 IMG=CentOS-7-x86_64-GenericCloud.qcow2
 URL=https://cloud.centos.org/centos/7/images/$IMG.xz
