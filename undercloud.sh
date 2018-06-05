@@ -2,7 +2,7 @@
 # Filename:                undercloud.sh
 # Description:             Installs Undercloud
 # Supported Langauge(s):   GNU Bash 4.2.x
-# Time-stamp:              <2018-06-05 14:01:50 fultonj> 
+# Time-stamp:              <2018-06-05 17:02:43 fultonj> 
 # -------------------------------------------------------
 # Does the work from the following document:
 #  http://docs.openstack.org/developer/tripleo-docs/installation/installation.html
@@ -18,19 +18,6 @@ test "$(whoami)" != 'stack' \
     && (echo "This must be run by the stack user on the undercloud"; exit 1)
 # -------------------------------------------------------
 if [ $PRE_UNDERCLOUD -eq 1 ]; then
-    echo "This scripts assumes the following is already true: "
-    echo "- You have an accurate undercloud.conf file in ~/rdo/conf/"
-    echo "- You want to download new images in a new directory called ~/images"
-    echo "- The script is being run in screen"
-    read -r -p "Are the above true? [y/N] " prompt
-    if [[ $prompt == "y" || $prompt == "Y" || $prompt == "yes" || $prompt == "Yes" ]] 
-    then
-	echo "Installing your undercloud...";
-    else
-	echo "Aborting as per your request"
-	exit 1
-    fi
-    
     echo "Downloading undercloud.conf"
     curl https://raw.githubusercontent.com/fultonj/tripleo-laptop/master/undercloud.conf > undercloud.conf
 
