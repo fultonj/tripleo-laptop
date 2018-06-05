@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# -------------------------------------------------------
+DOM=example.com
+SRC=centos
+NUMBER=0
+if [[ "$1" = "undercloud" ]]; then
+    NUMBER=1
+    echo "One $1 may be cloned (only)"
+    IP=192.168.122.252
+    RAM=8192
+    CPU=1
+fi
+if [[ "$1" = "overcloud" ]]; then
+    if [[ $2 =~ ^[0-9]+$ ]]; then
+	NUMBER=$2
+    else
+	NUMBER=1
+    fi
+    echo "Cloning $NUMBER $1 VM(s)"
+    IP=192.168.122.251
+    RAM=8192
+    CPU=1
+fi
+if [[ ! $NUMBER -gt 0 ]]; then
+    echo "Usage: $0 <undercloud or overcloud> [<number of over nodes (default 1)>]"
+    exit 1
+fi
+# -------------------------------------------------------
+for i in $(seq 0 $(( $NUMBER - 1 )) ); do
+    NAME=$1$i
+    IPDEC="IPADDR=$IP"
+    if [[ -e /var/lib/libvirt/images/$NAME.qcow2 ]]; then
+	echo "Destroying old $NAME"
+	if [[ $(sudo virsh list | grep $NAME) ]]; then
+	    sudo virsh destroy $NAME
+	fi
+	sudo virsh undefine $NAME
+	sudo rm -f /var/lib/libvirt/images/$NAME.qcow2
+	sudo sed -i "/$IP.*/d" /etc/hosts
+    fi
+    sudo virt-clone --original=$SRC --name=$NAME --file /var/lib/libvirt/images/$NAME.qcow2
+    sudo virt-customize -a /var/lib/libvirt/images/$NAME.qcow2 --run-command "SRC_IP=\$(grep IPADDR /etc/sysconfig/network-scripts/ifcfg-eth1) ; sed -i s/\$SRC_IP/$IPDEC/g /etc/sysconfig/network-scripts/ifcfg-eth1"
+    if [[ ! $(sudo virsh list | grep $NAME) ]]; then
+	sudo virsh start $NAME
+    fi
+    echo "Waiting for $NAME to boot and allow to SSH at $IP"
+    while [[ ! $(ssh root@$IP "uname") ]]
+    do
+	echo "No route to host yet; sleeping 30 seconds"
+	sleep 30
+    done
+    echo "SSH to $IP is working."
+    echo "Updating /etc/hosts"
+    ssh -o StrictHostKeyChecking=no -o GlobalKnownHostsFile=/dev/null -o UserKnownHostsFile=/dev/null root@$IP "hostnamectl set-hostname $NAME.$COM ; echo \"$IP    $NAME.$DOM        $NAME\" >> /etc/hosts "
+    sudo sh -c "echo $IP    $NAME.$DOM        $NAME >> /etc/hosts"
+    
+    # decrement the IP by one for the next loop
+    TAIL=$(echo $IP | awk -F  "." '/1/ {print $4}')
+    HEAD=$(echo $IP | sed s/$TAIL//g)
+    TAIL=$(( TAIL - 1))
+    IP=$HEAD$TAIL
+done
