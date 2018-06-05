@@ -56,7 +56,7 @@ fi
 # -------------------------------------------------------
 if [[ -e /var/lib/libvirt/images/$NAME.qcow2 ]]; then
     echo "Destroying old $NAME"
-    if [[ $(sudo virsh list | grep centos) ]]; then
+    if [[ $(sudo virsh list | grep $NAME) ]]; then
 	sudo virsh destroy $NAME
     fi
     sudo virsh undefine $NAME
