@@ -4,13 +4,12 @@
   - download centos cloud image
   - minamally modify it (e.g. remove cloud init, install ssh key)
 
+- [clone.sh](clone.sh)
+  - clones VM from centos named $1
+  - updates /etc/hosts on localhost and undercloud if it exists
+
 - [undercloud.sh](undercloud.sh)
-  - clone centos.sh to undercloud vm
   - install undercloud
-  - snapshot undercloud
 
 - [overcloud.sh](overcloud.sh)
-  - clone centos.sh to overcloud vm
   - configure overcloud for deployment with [deployed_servers](https://docs.openstack.org/tripleo-docs/latest/install/advanced_deployment/deployed_server.html)
-  - snapshot overcloud
-
