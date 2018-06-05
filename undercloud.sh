@@ -1,9 +1,4 @@
 #!/usr/bin/env bash
-# Filename:                undercloud.sh
-# Description:             Installs Undercloud
-# Supported Langauge(s):   GNU Bash 4.2.x
-# Time-stamp:              <2018-06-05 17:02:43 fultonj> 
-# -------------------------------------------------------
 # Does the work from the following document:
 #  http://docs.openstack.org/developer/tripleo-docs/installation/installation.html
 # -------------------------------------------------------
