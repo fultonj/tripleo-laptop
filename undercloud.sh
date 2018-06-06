@@ -13,20 +13,15 @@ test "$(whoami)" != 'stack' \
     && (echo "This must be run by the stack user on the undercloud"; exit 1)
 # -------------------------------------------------------
 if [ $PRE_UNDERCLOUD -eq 1 ]; then
-    echo "Downloading undercloud.conf"
-    curl https://raw.githubusercontent.com/fultonj/tripleo-laptop/master/undercloud.conf > undercloud.conf
-
     echo "Creating SSH config"
-    if [[ ! -f ~/.ssh/config ]]
-    then
-	mkdir  ~/.ssh
+    if [[ ! -f ~/.ssh/config ]]; then
 	echo StrictHostKeyChecking no > ~/.ssh/config
 	chmod 0600 ~/.ssh/config
 	rm -f ~/.ssh/known_hosts 2> /dev/null
 	ln -s /dev/null ~/.ssh/known_hosts
     fi
 
-    if [[ $(ip a s eth0 | grep 192 | wc -l) -eq 0 ]]; then 
+    if [[ $(ip a s eth0 | grep 192.168.24 | wc -l) -eq 0 ]]; then
 	echo "Bringing up eth0"
 	cat /dev/null > /tmp/eth0
 	echo "DEVICE=eth0" >> /tmp/eth0
@@ -36,6 +31,7 @@ if [ $PRE_UNDERCLOUD -eq 1 ]; then
 	echo "PREFIX=24" >> /tmp/eth0
 	sudo mv /tmp/eth0 /etc/sysconfig/network-scripts/ifcfg-eth0
 	sudo chcon system_u:object_r:net_conf_t:s0 /etc/sysconfig/network-scripts/ifcfg-eth0
+	sudo ifdown eth0
 	sudo ifup eth0
 	ip a s eth0
     fi
