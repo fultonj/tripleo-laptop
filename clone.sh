@@ -5,7 +5,7 @@ SRC=centos
 NUMBER=0
 if [[ "$1" = "undercloud" ]]; then
     NUMBER=1
-    echo "One $1 may be cloned (only)"
+    echo "cloning one $1"
     IP=192.168.122.252
     RAM=8192
     CPU=1
@@ -70,3 +70,10 @@ for i in $(seq 0 $(( $NUMBER - 1 )) ); do
     TAIL=$(( TAIL - 1))
     IP=$HEAD$TAIL
 done
+
+if [[ $NAME == "undercloud" ]]; then
+    tar cvfz undercloud.tar.gz undercloud.conf undercloud.sh >/dev/null 2>&1
+    scp $SSH_OPT undercloud.tar.gz stack@$NAME:/home/stack/
+    rm undercloud.tar.gz
+    ssh $SSH_OPT stack@$NAME "tar xf undercloud.tar.gz ; rm undercloud.tar.gz"
+fi
