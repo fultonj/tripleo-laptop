@@ -26,8 +26,13 @@ if [[ ! $NUMBER -gt 0 ]]; then
     exit 1
 fi
 # -------------------------------------------------------
+SSH_OPT="-o StrictHostKeyChecking=no -o GlobalKnownHostsFile=/dev/null -o UserKnownHostsFile=/dev/null"
 for i in $(seq 0 $(( $NUMBER - 1 )) ); do
-    NAME=$1$i
+    if [[ $1 == "undercloud" ]]; then
+	NAME=$1
+    else
+	NAME=$1$i
+    fi
     IPDEC="IPADDR=$IP"
     if [[ -e /var/lib/libvirt/images/$NAME.qcow2 ]]; then
 	echo "Destroying old $NAME"
@@ -44,16 +49,21 @@ for i in $(seq 0 $(( $NUMBER - 1 )) ); do
 	sudo virsh start $NAME
     fi
     echo "Waiting for $NAME to boot and allow to SSH at $IP"
-    while [[ ! $(ssh root@$IP "uname") ]]
+    while [[ ! $(ssh $SSH_OPT root@$IP "uname") ]]
     do
 	echo "No route to host yet; sleeping 30 seconds"
 	sleep 30
     done
-    echo "SSH to $IP is working."
-    echo "Updating /etc/hosts"
-    ssh -o StrictHostKeyChecking=no -o GlobalKnownHostsFile=/dev/null -o UserKnownHostsFile=/dev/null root@$IP "hostnamectl set-hostname $NAME.$COM ; echo \"$IP    $NAME.$DOM        $NAME\" >> /etc/hosts "
+    ssh $SSH_OPT root@$IP "hostname $NAME.$DOM ; echo HOSTNAME=$NAME.$DOM >> /etc/sysconfig/network"
+    ssh $SSH_OPT root@$IP "echo \"$IP    $NAME.$DOM        $NAME\" >> /etc/hosts "
     sudo sh -c "echo $IP    $NAME.$DOM        $NAME >> /etc/hosts"
-    
+
+    echo "$NAME is ready"
+    ssh stack@$NAME "uname -a"
+    echo ""
+    echo "ssh stack@$NAME"
+    echo ""
+
     # decrement the IP by one for the next loop
     TAIL=$(echo $IP | awk -F  "." '/1/ {print $4}')
     HEAD=$(echo $IP | sed s/$TAIL//g)
