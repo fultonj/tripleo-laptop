@@ -74,6 +74,7 @@ if [[ $SIZE -lt 37 ]]; then  # if we have a new base cloud image grow the filesy
     sudo virt-customize -a $IMG --run-command 'echo -e "d\nn\n\n\n\n\nw\n" | fdisk /dev/sda' 2> /dev/null
     sudo virt-customize -a $IMG --run-command 'xfs_growfs /'
     sudo virt-filesystems --long -h --all -a $IMG
+    sudo virt-customize -a $IMG --run-command 'cp /etc/sysconfig/network-scripts/ifcfg-eth{0,1} && sed -i s/DEVICE=.*/DEVICE=eth1/g /etc/sysconfig/network-scripts/ifcfg-eth1'
 else
     echo "File system size: $SIZE, not growing base image"
 fi
@@ -82,14 +83,15 @@ sudo qemu-img create -f qcow2 -b $IMG $NAME.qcow2
 sudo virt-customize -a $NAME.qcow2 --run-command 'yum remove cloud-init* -y'
 sudo virt-customize -a $NAME.qcow2 --root-password password:$PASSWD
 sudo virt-customize -a $NAME.qcow2  --hostname $NAME.$DOM
-sudo virt-customize -a $NAME.qcow2 --run-command 'cp /etc/sysconfig/network-scripts/ifcfg-eth{0,1} && sed -i s/DEVICE=.*/DEVICE=eth1/g /etc/sysconfig/network-scripts/ifcfg-eth1'
+sudo virt-customize -a $NAME.qcow2 --run-command "echo 'UseDNS no' >> /etc/ssh/sshd_config"
+sudo virt-customize -a $NAME.qcow2 --run-command 'sed -i -e "s/ONBOOT=.*/ONBOOT=no/g" /etc/sysconfig/network-scripts/ifcfg-eth0'
 sudo virt-customize -a $NAME.qcow2 --run-command 'sed -i -e "s/BOOTPROTO=.*/BOOTPROTO=none/g" -e "s/BOOTPROTOv6=.*/NM_CONTROLLED=no/g" -e "s/USERCTL=.*/IPADDR=THE_IP/g" -e "s/PEERDNS=.*/NETMASK=255.255.255.0/g" -e "s/IPV6INIT=.*/GATEWAY=192.168.122.1/g" -e "s/PERSISTENT_DHCLIENT=.*/DEFROUTE=yes/g" /etc/sysconfig/network-scripts/ifcfg-eth1'
 sudo virt-customize -a $NAME.qcow2 --run-command "sed -i s/THE_IP/$IP/g /etc/sysconfig/network-scripts/ifcfg-eth1"
 sudo virt-customize -a $NAME.qcow2 --run-command "mkdir /root/.ssh/; chmod 700 /root/.ssh/; echo $KEY > /root/.ssh/authorized_keys; chmod 600 /root/.ssh/authorized_keys; chcon system_u:object_r:ssh_home_t:s0 /root/.ssh ; chcon unconfined_u:object_r:ssh_home_t:s0 /root/.ssh/authorized_keys "
 popd
 
 # -------------------------------------------------------
-sudo virt-install --ram $RAM --vcpus $CPU --os-variant rhel7 --disk path=/var/lib/libvirt/images/$NAME.qcow2,device=disk,bus=virtio,format=qcow2 --import --noautoconsole --vnc --network network:default --network network:ctlplane --name $NAME
+sudo virt-install --ram $RAM --vcpus $CPU --os-variant rhel7 --disk path=/var/lib/libvirt/images/$NAME.qcow2,device=disk,bus=virtio,format=qcow2 --import --noautoconsole --vnc --network network:ctlplane --network network:default --name $NAME
 sleep 10
 if [[ ! $(sudo virsh list | grep $NAME) ]]; then
     echo "Cannot find new $NAME; Exiting."
