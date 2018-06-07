@@ -44,6 +44,12 @@ for i in $(seq 0 $(( $NUMBER - 1 )) ); do
 	sudo sed -i "/$IP.*/d" /etc/hosts
     fi
     sudo virt-clone --original=$SRC --name=$NAME --file /var/lib/libvirt/images/$NAME.qcow2
+
+    sudo virsh setmaxmem $NAME $RAM --config
+    sudo virsh setmem $NAME $RAM --config
+    sudo virsh setvcpus $NAME $CPU --config --maximum
+    sudo virsh setvcpus $NAME $CPU --config
+
     sudo virt-customize -a /var/lib/libvirt/images/$NAME.qcow2 --run-command "SRC_IP=\$(grep IPADDR /etc/sysconfig/network-scripts/ifcfg-eth1) ; sed -i s/\$SRC_IP/$IPDEC/g /etc/sysconfig/network-scripts/ifcfg-eth1"
     if [[ ! $(sudo virsh list | grep $NAME) ]]; then
 	sudo virsh start $NAME
