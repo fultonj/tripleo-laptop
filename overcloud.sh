@@ -10,7 +10,7 @@ if [[ ! -d ~/rpms ]]; then
 fi
 
 for OVER in $(grep overcloud /etc/hosts | grep -v \# | awk {'print $1'} ); do
-    ssh $OVER -l root "hostname" || (echo "No ssh for root@$OVER; exiting."; exit 1)
+    HOSTNAME=$(ssh $OVER -l root "hostname") || (echo "No ssh for root@$OVER; exiting."; exit 1)
     ETH0_UP=$(ssh root@$OVER "ip a s eth0 | grep 192.168.24 | wc -l")
     if [[ $ETH0_UP -eq 0 ]]; then
 	IPADDR=$(ssh root@$OVER "grep IPADDR /etc/sysconfig/network-scripts/ifcfg-eth1 | sed s/122/24/g")
@@ -28,6 +28,7 @@ for OVER in $(grep overcloud /etc/hosts | grep -v \# | awk {'print $1'} ); do
 	ssh root@$OVER "chmod 644 /etc/sysconfig/network-scripts/ifcfg-eth0"
 	ssh root@$OVER "ifup eth0"
 	ssh root@$OVER "sed -i '/DEFROUTE=yes.*/d' /etc/sysconfig/network-scripts/ifcfg-eth0"
+	ssh $OVER -l root "echo HOSTNAME=$HOSTNAME >> /etc/sysconfig/network"
 	echo "overcloud default route should now be be 192.168.24.1 ..."
 	ssh $OVER -l root "/sbin/ip route"
     fi
