@@ -72,7 +72,7 @@ for i in $(seq 0 $(( $NUMBER - 1 )) ); do
 done
 
 if [[ $NAME == "undercloud" ]]; then
-    F="undercloud.conf undercloud.sh"
+    F="undercloud.conf undercloud.sh poll.sh"
     tar cvfz undercloud.tar.gz $F >/dev/null 2>&1
     scp $SSH_OPT undercloud.tar.gz stack@$NAME:/home/stack/
     rm undercloud.tar.gz
