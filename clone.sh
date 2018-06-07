@@ -76,4 +76,5 @@ if [[ $NAME == "undercloud" ]]; then
     scp $SSH_OPT undercloud.tar.gz stack@$NAME:/home/stack/
     rm undercloud.tar.gz
     ssh $SSH_OPT stack@$NAME "tar xf undercloud.tar.gz ; rm undercloud.tar.gz"
+    ssh $SSH_OPT stack@$NAME "sudo yum install -y tmux emacs-nox vim"
 fi
