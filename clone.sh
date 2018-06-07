@@ -72,7 +72,8 @@ for i in $(seq 0 $(( $NUMBER - 1 )) ); do
 done
 
 if [[ $NAME == "undercloud" ]]; then
-    tar cvfz undercloud.tar.gz undercloud.conf undercloud.sh >/dev/null 2>&1
+    F="undercloud.conf undercloud.sh"
+    tar cvfz undercloud.tar.gz $F >/dev/null 2>&1
     scp $SSH_OPT undercloud.tar.gz stack@$NAME:/home/stack/
     rm undercloud.tar.gz
     ssh $SSH_OPT stack@$NAME "tar xf undercloud.tar.gz ; rm undercloud.tar.gz"
