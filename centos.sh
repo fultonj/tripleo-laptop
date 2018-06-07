@@ -111,6 +111,7 @@ ssh root@$IP 'useradd stack'
 ssh root@$IP 'echo "stack ALL=(root) NOPASSWD:ALL" | tee -a /etc/sudoers.d/stack'
 ssh root@$IP 'chmod 0440 /etc/sudoers.d/stack'
 ssh root@$IP "mkdir /home/stack/.ssh/; chmod 700 /home/stack/.ssh/; echo $KEY > /home/stack/.ssh/authorized_keys; chmod 600 /home/stack/.ssh/authorized_keys; chcon system_u:object_r:ssh_home_t:s0 /home/stack/.ssh ; chcon unconfined_u:object_r:ssh_home_t:s0 /home/stack/.ssh/authorized_keys; chown -R stack:stack /home/stack/.ssh/ "
+ssh root@$IP "echo nameserver 192.168.122.1 > /etc/resolv.conf"
 echo "$IP is ready"
 ssh stack@$IP "uname -a"
 echo "Shutting $NAME down"
