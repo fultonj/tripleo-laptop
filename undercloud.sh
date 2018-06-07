@@ -21,6 +21,19 @@ if [ $PRE_UNDERCLOUD -eq 1 ]; then
 	ln -s /dev/null ~/.ssh/known_hosts
     fi
 
+    echo "Verifying hostname is set for undercloud install"
+    if sudo hostnamectl --static ; then
+        echo "hostnamectl is working"
+    else
+        # workaround for "message recipient disconnected from message"
+        echo "hostnamectl is not working; trying workaround"
+        sudo setenforce 0
+        sudo hostnamectl set-hostname $(hostname)
+        sudo hostnamectl --static
+        sudo setenforce 1
+        echo "SELinux is enabled"
+    fi
+
     if [[ $(ip a s eth0 | grep 192.168.24 | wc -l) -eq 0 ]]; then
 	echo "Bringing up eth0"
 	cat /dev/null > /tmp/eth0
