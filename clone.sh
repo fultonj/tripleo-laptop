@@ -78,7 +78,8 @@ for i in $(seq 0 $(( $NUMBER - 1 )) ); do
 done
 
 if [[ $NAME == "undercloud" ]]; then
-    echo "git clone git@github.com:fultonj/tripleo-laptop.git" > git.sh
+    echo "ssh-keyscan github.com >> ~/.ssh/known_hosts" > git.sh
+    echo "git clone git@github.com:fultonj/tripleo-laptop.git" >> git.sh
     scp $SSH_OPT git.sh stack@$NAME:/home/stack/
     ssh $SSH_OPT stack@$NAME "chmod 755 git.sh"
     rm git.sh
