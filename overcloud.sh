@@ -33,6 +33,11 @@ for OVER in $(grep overcloud /etc/hosts | grep -v \# | awk {'print $1'} ); do
 	ssh $OVER -l root "/sbin/ip route"
     fi
 
+    ssh root@$OVER 'useradd heat-admin'
+    ssh root@$OVER 'echo "heat-admin ALL=(root) NOPASSWD:ALL" | tee -a /etc/sudoers.d/heat-admin'
+    ssh root@$OVER 'chmod 0440 /etc/sudoers.d/heat-admin'
+    ssh root@$OVER "mkdir /home/heat-admin/.ssh/; chmod 700 /home/heat-admin/.ssh/; echo $KEY > /home/heat-admin/.ssh/authorized_keys; chmod 600 /home/heat-admin/.ssh/authorized_keys; chcon system_u:object_r:ssh_home_t:s0 /home/heat-admin/.ssh ; chcon unconfined_u:object_r:ssh_home_t:s0 /home/heat-admin/.ssh/authorized_keys; chown -R heat-admin:heat-admin /home/heat-admin/.ssh/ "
+    
     echo  "Can overcloud reach undercloud Heat API and Swift Server?"
     ssh $OVER -l stack "curl -s 192.168.24.1:8000" | jq .  # should return json
     ssh $OVER -l stack "curl -s 192.168.24.1:8080" # should 404

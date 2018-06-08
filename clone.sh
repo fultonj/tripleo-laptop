@@ -71,13 +71,6 @@ for i in $(seq 0 $(( $NUMBER - 1 )) ); do
     echo "ssh stack@$NAME"
     echo ""
 
-    if [[ $NAME != "undercloud" ]]; then
-	ssh root@$IP 'useradd heat-admin'
-	ssh root@$IP 'echo "heat-admin ALL=(root) NOPASSWD:ALL" | tee -a /etc/sudoers.d/heat-admin'
-	ssh root@$IP 'chmod 0440 /etc/sudoers.d/heat-admin'
-	ssh root@$IP "mkdir /home/heat-admin/.ssh/; chmod 700 /home/heat-admin/.ssh/; echo $KEY > /home/heat-admin/.ssh/authorized_keys; chmod 600 /home/heat-admin/.ssh/authorized_keys; chcon system_u:object_r:ssh_home_t:s0 /home/heat-admin/.ssh ; chcon unconfined_u:object_r:ssh_home_t:s0 /home/heat-admin/.ssh/authorized_keys; chown -R heat-admin:heat-admin /home/heat-admin/.ssh/ "
-    fi
-
     # decrement the IP by one for the next loop
     TAIL=$(echo $IP | awk -F  "." '/1/ {print $4}')
     HEAD=$(echo $IP | sed s/$TAIL//g)
