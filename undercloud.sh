@@ -2,12 +2,13 @@
 # Does the work from the following document:
 #  http://docs.openstack.org/developer/tripleo-docs/installation/installation.html
 # -------------------------------------------------------
-PRE_UNDERCLOUD=1
-REPO=1
-INSTALL=1
-POST_UNDERCLOUD=1
-CONTAINERS_EXT=1
+PRE_UNDERCLOUD=0
+REPO=0
+INSTALL=0
+POST_UNDERCLOUD=0
+CONTAINERS_EXT=0
 CONTAINERS_LOC=0
+CONTAINERS_LOC_NEW=1
 # -------------------------------------------------------
 test "$(whoami)" != 'stack' \
     && (echo "This must be run by the stack user on the undercloud"; exit 1)
@@ -155,4 +156,16 @@ if [ $CONTAINERS_LOC -eq 1 ]; then
     else
 	echo "overcloud_containers.yaml is not in current directory"
     fi
+fi
+# -------------------------------------------------------
+if [ $CONTAINERS_LOC_NEW -eq 1 ]; then
+    # https://docs.openstack.org/tripleo-docs/latest/install/containers_deployment/overcloud.html#populate-local-docker-registry
+    openstack overcloud container image prepare \
+	      --namespace docker.io/tripleomaster \
+	      --tag current-tripleo \
+	      --tag-from-label rdo_version \
+	      --push-destination 192.168.24.1:8787 \
+	      --output-env-file ~/docker_registry.yaml \
+	      --output-images-file overcloud_containers.yaml
+    openstack overcloud container image upload --config-file overcloud_containers.yaml
 fi
