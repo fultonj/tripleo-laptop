@@ -2,7 +2,7 @@
 
 source ~/stackrc 
 export OVERCLOUD_ROLES="Controller"
-export Controller_hosts="192.168.24.2"
+export Controller_hosts="192.168.24.251"
 /usr/share/openstack-tripleo-heat-templates/deployed-server/scripts/get-occ-config.sh
 
 OVER=$Controller_hosts
