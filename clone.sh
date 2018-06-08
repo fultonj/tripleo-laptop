@@ -78,10 +78,12 @@ for i in $(seq 0 $(( $NUMBER - 1 )) ); do
 done
 
 if [[ $NAME == "undercloud" ]]; then
-    F="undercloud.conf undercloud.sh poll.sh"
+    echo "git clone git@github.com:fultonj/tripleo-laptop.git" > git.sh
+    chmod 755 git.sh
+    F="undercloud.conf undercloud.sh poll.sh git.sh"
     tar cvfz undercloud.tar.gz $F >/dev/null 2>&1
     scp $SSH_OPT undercloud.tar.gz stack@$NAME:/home/stack/
-    rm undercloud.tar.gz
+    rm undercloud.tar.gz git.sh
     ssh $SSH_OPT stack@$NAME "tar xf undercloud.tar.gz ; rm undercloud.tar.gz"
     ssh $SSH_OPT stack@$NAME "sudo yum install -y tmux emacs-nox vim"
 fi
