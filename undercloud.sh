@@ -114,7 +114,7 @@ fi
 if [ $CONTAINERS_LOC -eq 1 ]; then
     # broken
     tag="current-tripleo-rdo"
-    cp ~/rdo/conf/overcloud_containers.yaml .
+    cp ~/tht/overcloud_containers.yaml .
     if [[ -f overcloud_containers.yaml ]] ; then
 	echo "uploading container registry based on overcloud_containers.yaml"
 	sudo openstack overcloud container image upload --config-file overcloud_containers.yaml --verbose
