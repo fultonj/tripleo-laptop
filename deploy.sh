@@ -7,6 +7,7 @@ if [[ ! -d ~/templates ]]; then
 fi
 
 time openstack overcloud deploy --templates ~/templates \
+     -r ~/tht/all_in_one.yaml \
      -e ~/templates/environments/docker.yaml \
      -e ~/templates/environments/low-memory-usage.yaml \
      -e ~/templates/environments/disable-telemetry.yaml \
