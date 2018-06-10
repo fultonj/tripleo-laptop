@@ -19,7 +19,7 @@ let me use [deployed servers](https://docs.openstack.org/tripleo-docs/latest/ins
   - (20 minutes to install undercloud + 35 minutes to mirror docker repos)
 
 - [overcloud.sh](overcloud.sh)
-  - configure overcloud for deployment with [deployed_servers](https://docs.openstack.org/tripleo-docs/latest/install/advanced_deployment/deployed_server.html)
+  - configure potential overcloud nodes (overcloud0, ...) for deployment with [deployed servers](https://docs.openstack.org/tripleo-docs/latest/install/advanced_deployment/deployed_server.html)
   - (5 minutes or less)
 
 - [deploy.sh](deploy.sh)
