@@ -5,6 +5,18 @@ source ~/stackrc
 if [[ ! -d ~/templates ]]; then
     ln -s /usr/share/openstack-tripleo-heat-templates templates
 fi
+if [[ ! -d ~/tht ]]; then
+    ln -s tripleo-laptop/tht 
+fi
+
+for IP in $(grep 192.168.24 tht/ctlplane-assignments.yaml | grep -v 192.168.24.1 | awk {'print $3'}); do
+    if [[ $(ssh heat-admin@$IP "hostname") ]]; then
+	echo "ssh heat-admin@$IP is working";
+    else
+	echo "ssh heat-admin@$IP is NOT working. Aborting.";
+	exit 1
+    fi
+done
 
 time openstack overcloud deploy --templates ~/templates \
      -r ~/tht/all_in_one.yaml \
