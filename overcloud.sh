@@ -28,12 +28,14 @@ for OVER in $(grep overcloud /etc/hosts | grep -v \# | awk {'print $1'} ); do
 	echo "TYPE=Ethernet" >> /tmp/eth0
 	echo "$IPADDR" >> /tmp/eth0
 	echo "PREFIX=24" >> /tmp/eth0
+	echo "GATEWAY=192.168.24.1" >> /tmp/eth0
 	echo "DEFROUTE=yes" >> /tmp/eth0
 	scp /tmp/eth0 root@$OVER:/etc/sysconfig/network-scripts/ifcfg-eth0
 	ssh root@$OVER "chcon system_u:object_r:net_conf_t:s0 /etc/sysconfig/network-scripts/ifcfg-eth0"
 	ssh root@$OVER "chmod 644 /etc/sysconfig/network-scripts/ifcfg-eth0"
 	ssh root@$OVER "ifup eth0"
-	ssh root@$OVER "sed -i '/DEFROUTE=yes.*/d' /etc/sysconfig/network-scripts/ifcfg-eth0"
+	ssh root@$OVER "sed -i '/DEFROUTE=yes.*/d' /etc/sysconfig/network-scripts/ifcfg-eth1"
+	ssh root@$OVER "sed -i '/GATEWAY.*/d' /etc/sysconfig/network-scripts/ifcfg-eth1"
 	ssh $OVER -l root "echo HOSTNAME=$HOSTNAME >> /etc/sysconfig/network"
 	echo "overcloud default route should now be be 192.168.24.1 ..."
 	ssh $OVER -l root "/sbin/ip route"
@@ -43,13 +45,6 @@ for OVER in $(grep overcloud /etc/hosts | grep -v \# | awk {'print $1'} ); do
     ssh root@$OVER 'echo "heat-admin ALL=(root) NOPASSWD:ALL" | tee -a /etc/sudoers.d/heat-admin'
     ssh root@$OVER 'chmod 0440 /etc/sudoers.d/heat-admin'
     ssh root@$OVER "mkdir /home/heat-admin/.ssh/; chmod 700 /home/heat-admin/.ssh/; echo $KEY > /home/heat-admin/.ssh/authorized_keys; chmod 600 /home/heat-admin/.ssh/authorized_keys; chcon system_u:object_r:ssh_home_t:s0 /home/heat-admin/.ssh ; chcon unconfined_u:object_r:ssh_home_t:s0 /home/heat-admin/.ssh/authorized_keys; chown -R heat-admin:heat-admin /home/heat-admin/.ssh/ "
-    
-    echo  "Can overcloud reach undercloud Heat API and Swift Server?"
-    ssh $OVER -l stack "curl -s 192.168.24.1:8000" | jq .  # should return json
-    ssh $OVER -l stack "curl -s 192.168.24.1:8080" # should 404
-    echo ""
-    echo "404 above is expcted ^"
-    echo ""
 
     scp -r ~/rpms/ stack@$OVER:/home/stack/
     ssh $OVER -l stack "sudo yum -y install rpms/*"
