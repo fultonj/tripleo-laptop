@@ -9,6 +9,12 @@ if [[ ! -d ~/rpms ]]; then
     curl -f $url/$rpm -o ~/rpms/$rpm
 fi
 
+KEY=$(ssh stack@undercloud "cat /home/stack/.ssh/id_rsa.pub")
+if [[ ! $KEY ]]; then
+    echo "Unable to retrieve stack@undercloud's public SSH key. Aborting."
+    exit 1
+fi
+
 for OVER in $(grep overcloud /etc/hosts | grep -v \# | awk {'print $1'} ); do
     HOSTNAME=$(ssh $OVER -l root "hostname") || (echo "No ssh for root@$OVER; exiting."; exit 1)
     ETH0_UP=$(ssh root@$OVER "ip a s eth0 | grep 192.168.24 | wc -l")
