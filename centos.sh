@@ -24,7 +24,7 @@ if [[ ! -e ~/.ssh/config ]]; then
     chmod 0700 ~/.ssh
 fi
 # -------------------------------------------------------
-sudo yum install -y libguestfs-tools xz libvirt
+sudo yum install -y libguestfs-tools xz libvirt virt-install
 if [[ ! $(sudo systemctl status libvirtd) ]]; then
    sudo systemctl start libvirtd
 fi
