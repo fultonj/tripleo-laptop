@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # -------------------------------------------------------
 DOM=example.com
-SRC=centos
 NUMBER=0
 if [[ "$1" = "undercloud" ]]; then
     NUMBER=1
@@ -25,8 +24,14 @@ if [[ "$1" = "overcloud" ]]; then
     IP=192.168.122.251
     RAM=7812500
 fi
+if [[ "$4" = "fedora28" ]]; then
+    SRC="fedora28"
+else
+    SRC="centos"
+fi
 if [[ ! $NUMBER -gt 0 ]]; then
-    echo "Usage: $0 <undercloud or overcloud> [<number of over nodes (default 1)>]"
+    echo "Usage: $0 <undercloud|overcloud> [<number of overcloud nodes (default 1)>]"
+    echo "[<number of CPUs (default 2)>] [<centos|fedora28> (default centos)>]"
     exit 1
 fi
 # -------------------------------------------------------
