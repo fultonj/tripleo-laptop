@@ -18,8 +18,10 @@ if [[ "$1" = "overcloud" ]]; then
     fi
     echo "Cloning $NUMBER $1 VM(s)"
     IP=192.168.122.251
-    RAM=7812500
-    CPU=2
+    RAM=11718750
+    CPU=4
+    #RAM=7812500
+    #CPU=2
 fi
 if [[ ! $NUMBER -gt 0 ]]; then
     echo "Usage: $0 <undercloud or overcloud> [<number of over nodes (default 1)>]"
