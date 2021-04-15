@@ -17,7 +17,7 @@ if [[ ! -e ~/.ssh/id_rsa.pub ]]; then
     echo "Please run ssh-keygen"
     exit 1
 else
-    KEY=$(cat ~/.ssh/id_rsa.pub)
+    KEY=$(cat ~/.ssh/id_ed25519.pub)
 fi
 if [[ ! -e ~/.ssh/config ]]; then
     cat /dev/null > ~/.ssh/config
