@@ -96,6 +96,6 @@ if [[ $NAME == "undercloud" ]]; then
     scp $SSH_OPT git.sh stack@$NAME:/home/stack/
     ssh $SSH_OPT stack@$NAME "chmod 755 git.sh"
     rm git.sh
-    ssh $SSH_OPT stack@$NAME "sudo yum install -y tmux emacs-nox vim git"
+    # ssh $SSH_OPT stack@$NAME "sudo yum install -y tmux emacs-nox vim git"
 fi
 

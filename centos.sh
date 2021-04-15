@@ -5,9 +5,13 @@ NAME=centos
 RAM=8192
 CPU=1
 PASSWD=abc123
-IMG=CentOS-7-x86_64-GenericCloud.qcow2
-URL=https://cloud.centos.org/centos/7/images/$IMG.xz
 DOM=example.com
+#IMG=CentOS-7-x86_64-GenericCloud.qcow2
+#URL=https://cloud.centos.org/centos/7/images/$IMG.xz
+#OS=rhel7
+IMG=CentOS-Stream-GenericCloud-8-20210210.0.x86_64.qcow2
+URL=https://cloud.centos.org/centos/8-stream/x86_64/images/$IMG
+OS=centos-stream8
 # -------------------------------------------------------
 if [[ ! -e ~/.ssh/id_rsa.pub ]]; then
     echo "Please run ssh-keygen"
@@ -23,6 +27,7 @@ if [[ ! -e ~/.ssh/config ]]; then
     chmod 0600 ~/.ssh/config
     chmod 0700 ~/.ssh
 fi
+SSH_OPT="-o StrictHostKeyChecking=no -o GlobalKnownHostsFile=/dev/null -o UserKnownHostsFile=/dev/null"
 # -------------------------------------------------------
 sudo yum install -y libguestfs-tools xz libvirt virt-install
 if [[ ! $(sudo systemctl status libvirtd) ]]; then
@@ -31,8 +36,8 @@ fi
 # -------------------------------------------------------
 if [[ ! $(sudo ls /var/lib/libvirt/images/$IMG) ]]; then
     echo "Downloading $URL"
-    curl $URL > $IMG.xz
-    unxz $IMG.xz
+    curl --remote-name --location --insecure $URL -o $IMG
+    # unxz $IMG.xz
     sudo cp $IMG /var/lib/libvirt/images/
     # to download newer image run 'sudo rm /var/lib/libvirt/images/$IMG'
 fi
@@ -91,28 +96,28 @@ sudo virt-customize -a $NAME.qcow2 --run-command "mkdir /root/.ssh/; chmod 700 /
 popd
 
 # -------------------------------------------------------
-sudo virt-install --ram $RAM --vcpus $CPU --os-variant rhel7 --disk path=/var/lib/libvirt/images/$NAME.qcow2,device=disk,bus=virtio,format=qcow2 --import --noautoconsole --vnc --network network:ctlplane --network network:default --name $NAME
+sudo virt-install --ram $RAM --vcpus $CPU --os-variant $OS --disk path=/var/lib/libvirt/images/$NAME.qcow2,device=disk,bus=virtio,format=qcow2 --import --noautoconsole --vnc --network network:ctlplane --network network:default --name $NAME
 sleep 10
 if [[ ! $(sudo virsh list | grep $NAME) ]]; then
     echo "Cannot find new $NAME; Exiting."
     exit 1
 fi
 echo "Waiting for $NAME to boot and allow to SSH at $IP"
-while [[ ! $(ssh root@$IP "uname") ]]
+while [[ ! $(ssh $SSH_OPT root@$IP "uname") ]]
 do
     echo "No route to host yet; sleeping 30 seconds"
     sleep 30
 done
 echo "SSH to $IP is working."
 echo "Updating /etc/hosts"
-ssh root@$IP 'echo "$IP    $NAME.$DOM        $NAME" >> /etc/hosts'
+ssh $SSH_OPT root@$IP 'echo "$IP    $NAME.$DOM        $NAME" >> /etc/hosts'
 echo "Creating stack user"
-ssh root@$IP 'useradd stack'
-ssh root@$IP 'echo "stack ALL=(root) NOPASSWD:ALL" | tee -a /etc/sudoers.d/stack'
-ssh root@$IP 'chmod 0440 /etc/sudoers.d/stack'
-ssh root@$IP "mkdir /home/stack/.ssh/; chmod 700 /home/stack/.ssh/; echo $KEY > /home/stack/.ssh/authorized_keys; chmod 600 /home/stack/.ssh/authorized_keys; chcon system_u:object_r:ssh_home_t:s0 /home/stack/.ssh ; chcon unconfined_u:object_r:ssh_home_t:s0 /home/stack/.ssh/authorized_keys; chown -R stack:stack /home/stack/.ssh/ "
-ssh root@$IP "echo nameserver 192.168.122.1 > /etc/resolv.conf"
+ssh $SSH_OPT root@$IP 'useradd stack'
+ssh $SSH_OPT root@$IP 'echo "stack ALL=(root) NOPASSWD:ALL" | tee -a /etc/sudoers.d/stack'
+ssh $SSH_OPT root@$IP 'chmod 0440 /etc/sudoers.d/stack'
+ssh $SSH_OPT root@$IP "mkdir /home/stack/.ssh/; chmod 700 /home/stack/.ssh/; echo $KEY > /home/stack/.ssh/authorized_keys; chmod 600 /home/stack/.ssh/authorized_keys; chcon system_u:object_r:ssh_home_t:s0 /home/stack/.ssh ; chcon unconfined_u:object_r:ssh_home_t:s0 /home/stack/.ssh/authorized_keys; chown -R stack:stack /home/stack/.ssh/ "
+ssh $SSH_OPT root@$IP "echo nameserver 192.168.122.1 > /etc/resolv.conf"
 echo "$IP is ready"
-ssh stack@$IP "uname -a"
+ssh $SSH_OPT stack@$IP "uname -a"
 echo "Shutting $NAME down"
-ssh root@$IP "init 0"
+ssh $SSH_OPT root@$IP "init 0"
