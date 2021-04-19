@@ -2,7 +2,7 @@
 # -------------------------------------------------------
 DOM=example.com
 NUMBER=0
-if [[ "$1" = "undercloud" ]]; then
+if [[ "$1" = "undercloud" || "$1" = "standalone" ]]; then
     NUMBER=1
     echo "cloning one $1"
     IP=192.168.122.252
@@ -33,7 +33,7 @@ else
     SRC="centos"
 fi
 if [[ ! $NUMBER -gt 0 ]]; then
-    echo "Usage: $0 <undercloud|overcloud> [<number of overcloud nodes (default 1)>]"
+    echo "Usage: $0 <undercloud|standalone|overcloud> [<number of overcloud nodes (default 1)>]"
     echo "[<number of CPUs (default 2)>] [<centos|fedora28> (default centos)>]"
     exit 1
 fi
@@ -41,7 +41,7 @@ fi
 SSH_OPT="-o StrictHostKeyChecking=no -o GlobalKnownHostsFile=/dev/null -o UserKnownHostsFile=/dev/null"
 KEY=$(cat ~/.ssh/id_rsa.pub)
 for i in $(seq 0 $(( $NUMBER - 1 )) ); do
-    if [[ $1 == "undercloud" ]]; then
+    if [[ "$1" = "undercloud" || "$1" = "standalone" ]]; then
 	NAME=$1
     else
 	NAME=$1$i
@@ -90,12 +90,13 @@ for i in $(seq 0 $(( $NUMBER - 1 )) ); do
     IP=$HEAD$TAIL
 done
 
-if [[ $NAME == "undercloud" ]]; then
+if [[ $NAME == "undercloud" || $NAME == "standalone" ]]; then
     echo "ssh-keyscan github.com >> ~/.ssh/known_hosts" > git.sh
     echo "git clone git@github.com:fultonj/tripleo-laptop.git" >> git.sh
+    echo "git clone git@github.com:fultonj/wallaby.git" >> git.sh
     scp $SSH_OPT git.sh stack@$NAME:/home/stack/
     ssh $SSH_OPT stack@$NAME "chmod 755 git.sh"
     rm git.sh
-    # ssh $SSH_OPT stack@$NAME "sudo yum install -y tmux emacs-nox vim git"
+    ssh $SSH_OPT stack@$NAME "sudo yum install -y tmux emacs-nox vim git"
 fi
 
