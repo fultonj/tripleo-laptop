@@ -9,7 +9,7 @@ if [[ "$1" = "undercloud" || "$1" = "standalone" ]]; then
     RAM=11718750
     CPU=4
 fi
-if [[ "$1" = "overcloud" ]]; then
+if [[ "$1" = "overcloud" || "$1" = "node" ]]; then
     if [[ $2 =~ ^[0-9]+$ ]]; then
 	NUMBER=$2
     else
@@ -33,7 +33,7 @@ else
     SRC="centos"
 fi
 if [[ ! $NUMBER -gt 0 ]]; then
-    echo "Usage: $0 <undercloud|standalone|overcloud> [<number of overcloud nodes (default 1)>]"
+    echo "Usage: $0 <undercloud|standalone|overcloud|node> [<number of overcloud nodes (default 1)>]"
     echo "[<number of CPUs (default 2)>] [<centos|fedora28> (default centos)>]"
     exit 1
 fi
@@ -73,10 +73,16 @@ for i in $(seq 0 $(( $NUMBER - 1 )) ); do
 	echo "No route to host yet; sleeping 30 seconds"
 	sleep 30
     done
-    ssh $SSH_OPT root@$IP "hostname $NAME.$DOM ; echo HOSTNAME=$NAME.$DOM >> /etc/sysconfig/network"
-    ssh $SSH_OPT root@$IP "echo \"$IP    $NAME.$DOM        $NAME\" >> /etc/hosts "
-    sudo sh -c "echo $IP    $NAME.$DOM        $NAME >> /etc/hosts"
 
+    if [[ "$1" = "node" ]]; then
+        ssh $SSH_OPT root@$IP "hostname $NAME ; echo HOSTNAME=$NAME >> /etc/sysconfig/network"
+        ssh $SSH_OPT root@$IP "echo \"$IP    $NAME\" >> /etc/hosts "
+        sudo sh -c "echo $IP    $NAME >> /etc/hosts"
+    else
+        ssh $SSH_OPT root@$IP "hostname $NAME.$DOM ; echo HOSTNAME=$NAME.$DOM >> /etc/sysconfig/network"
+        ssh $SSH_OPT root@$IP "echo \"$IP    $NAME.$DOM        $NAME\" >> /etc/hosts "
+        sudo sh -c "echo $IP    $NAME.$DOM        $NAME >> /etc/hosts"
+    fi
     echo "$NAME is ready"
     ssh stack@$NAME "uname -a"
     echo ""
@@ -90,13 +96,16 @@ for i in $(seq 0 $(( $NUMBER - 1 )) ); do
     IP=$HEAD$TAIL
 done
 
-if [[ $NAME == "undercloud" || $NAME == "standalone" ]]; then
+if [[ "$1" = "node" ]]; then
+    NAME=node0
+fi
+
+if [[ $NAME == "undercloud" || $NAME == "standalone" || $NAME == "node0" ]]; then
     echo "ssh-keyscan github.com >> ~/.ssh/known_hosts" > git.sh
     echo "git clone git@github.com:fultonj/tripleo-laptop.git" >> git.sh
-    echo "git clone git@github.com:fultonj/wallaby.git" >> git.sh
+    echo "git clone git@github.com:fultonj/xena.git" >> git.sh
     scp $SSH_OPT git.sh stack@$NAME:/home/stack/
     ssh $SSH_OPT stack@$NAME "chmod 755 git.sh"
     rm git.sh
     ssh $SSH_OPT stack@$NAME "sudo yum install -y tmux emacs-nox vim git"
 fi
-
