@@ -64,6 +64,7 @@ for i in $(seq 0 $(( $NUMBER - 1 )) ); do
     sudo virsh setvcpus $NAME --count $CPU --config
 
     sudo virt-customize -a /var/lib/libvirt/images/$NAME.qcow2 --run-command "SRC_IP=\$(grep IPADDR /etc/sysconfig/network-scripts/ifcfg-eth1) ; sed -i s/\$SRC_IP/$IPDEC/g /etc/sysconfig/network-scripts/ifcfg-eth1"
+    sudo virt-customize -a /var/lib/libvirt/images/$NAME.qcow2 --run-command "sed -i s/SELINUX=enforcing/SELINUX=disabled/g /etc/selinux/config"
     if [[ ! $(sudo virsh list | grep $NAME) ]]; then
 	sudo virsh start $NAME
     fi
@@ -78,6 +79,9 @@ for i in $(seq 0 $(( $NUMBER - 1 )) ); do
         ssh $SSH_OPT root@$IP "hostname $NAME ; echo HOSTNAME=$NAME >> /etc/sysconfig/network"
         ssh $SSH_OPT root@$IP "echo \"$IP    $NAME\" >> /etc/hosts "
         sudo sh -c "echo $IP    $NAME >> /etc/hosts"
+        ssh $SSH_OPT root@$IP "hostnamectl set-hostname $NAME"
+        ssh $SSH_OPT root@$IP "echo nameserver 8.8.8.8 >> /etc/resolv.conf"
+        ssh $SSH_OPT root@$IP "echo nameserver 8.8.4.4 >> /etc/resolv.conf"
     else
         ssh $SSH_OPT root@$IP "hostname $NAME.$DOM ; echo HOSTNAME=$NAME.$DOM >> /etc/sysconfig/network"
         ssh $SSH_OPT root@$IP "echo \"$IP    $NAME.$DOM        $NAME\" >> /etc/hosts "
