@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # -------------------------------------------------------
+DISKS=0
 DOM=example.com
 NUMBER=0
 if [[ "$1" = "undercloud" || "$1" = "standalone" ]]; then
@@ -53,7 +54,10 @@ for i in $(seq 0 $(( $NUMBER - 1 )) ); do
 	    sudo virsh destroy $NAME
 	fi
 	sudo virsh undefine $NAME
-	sudo rm -f /var/lib/libvirt/images/$NAME.qcow2
+	sudo rm -f -v /var/lib/libvirt/images/$NAME.qcow2
+        for D in $(sudo ls /var/lib/libvirt/images/ | grep $NAME-disk); do
+            sudo rm -f -v /var/lib/libvirt/images/$D
+        done
 	sudo sed -i "/$IP.*/d" /etc/hosts
     fi
     sudo virt-clone --original=$SRC --name=$NAME --file /var/lib/libvirt/images/$NAME.qcow2
@@ -64,6 +68,16 @@ for i in $(seq 0 $(( $NUMBER - 1 )) ); do
     sudo virsh setvcpus $NAME --count $CPU --config
 
     sudo virt-customize -a /var/lib/libvirt/images/$NAME.qcow2 --run-command "SRC_IP=\$(grep IPADDR /etc/sysconfig/network-scripts/ifcfg-eth1) ; sed -i s/\$SRC_IP/$IPDEC/g /etc/sysconfig/network-scripts/ifcfg-eth1"
+
+    if [[ $DISKS -gt 0 ]]; then
+        echo "Adding $DISKS disks"
+        for J in $(seq 1 $(( $DISKS )) ); do
+            L=$(echo $J | tr 0123456789 abcdefghij)
+            sudo qemu-img create -f raw /var/lib/libvirt/images/$NAME-disk-$L.img 10G
+            sudo virsh attach-disk $NAME --config /var/lib/libvirt/images/$NAME-disk-$L.img vd$L
+        done
+    fi
+
     if [[ ! $(sudo virsh list | grep $NAME) ]]; then
 	sudo virsh start $NAME
     fi
