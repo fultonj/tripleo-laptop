@@ -41,6 +41,7 @@ fi
 # -------------------------------------------------------
 SSH_OPT="-o StrictHostKeyChecking=no -o GlobalKnownHostsFile=/dev/null -o UserKnownHostsFile=/dev/null"
 KEY=$(cat ~/.ssh/id_rsa.pub)
+cat /dev/null > /tmp/hosts
 for i in $(seq 0 $(( $NUMBER - 1 )) ); do
     if [[ "$1" = "undercloud" || "$1" = "standalone" ]]; then
 	NAME=$1
@@ -95,6 +96,7 @@ for i in $(seq 0 $(( $NUMBER - 1 )) ); do
         ssh $SSH_OPT root@$IP "hostnamectl set-hostname $NAME"
         ssh $SSH_OPT root@$IP "echo nameserver 8.8.8.8 >> /etc/resolv.conf"
         ssh $SSH_OPT root@$IP "echo nameserver 8.8.4.4 >> /etc/resolv.conf"
+        sudo sh -c "echo $IP    $NAME >> /tmp/hosts"
     else
         ssh $SSH_OPT root@$IP "hostname $NAME.$DOM ; echo HOSTNAME=$NAME.$DOM >> /etc/sysconfig/network"
         ssh $SSH_OPT root@$IP "echo \"$IP    $NAME.$DOM        $NAME\" >> /etc/hosts "
@@ -126,5 +128,9 @@ if [[ $NAME == "undercloud" || $NAME == "standalone" || $NAME == "node0" ]]; the
     scp $SSH_OPT git.sh stack@$NAME:/home/stack/
     ssh $SSH_OPT stack@$NAME "chmod 755 git.sh"
     rm git.sh
+    if [[ $NAME == "node0" ]]; then
+        scp $SSH_OPT /tmp/hosts stack@$NAME:/home/stack/hosts
+        rm -f /tmp/hosts
+    fi
     ssh $SSH_OPT stack@$NAME "sudo yum install -y tmux emacs-nox vim git"
 fi
