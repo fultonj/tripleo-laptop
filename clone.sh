@@ -120,11 +120,18 @@ if [[ "$1" = "node" ]]; then
 fi
 
 if [[ $NAME == "undercloud" || $NAME == "standalone" || $NAME == "node0" ]]; then
-    echo "ssh-keyscan github.com >> ~/.ssh/known_hosts" > git.sh
+    # install repos for centos9
+    scp $SSH_OPT repos/* stack@$NAME:/tmp/
+    ssh $SSH_OPT root@$NAME "mv /tmp/*.repo /etc/yum.repos.d/"
+
+    echo "" > git.sh
+    echo "sudo yum install -y tmux emacs-nox vim git" >> git.sh
+    echo "ssh-keyscan github.com >> ~/.ssh/known_hosts" >> git.sh
     #echo "git clone git@github.com:fultonj/tripleo-laptop.git" >> git.sh
-    #echo "git clone git@github.com:fultonj/xena.git" >> git.sh
+    echo "git clone git@github.com:fultonj/xena.git" >> git.sh
     #echo "git clone git@github.com:fultonj/task-core.git" >> git.sh
-    echo "git clone git@github.com:fultonj/directord_ceph.git" >> git.sh
+    #echo "git clone git@github.com:fultonj/directord_ceph.git" >> git.sh
+
     scp $SSH_OPT git.sh stack@$NAME:/home/stack/
     ssh $SSH_OPT stack@$NAME "chmod 755 git.sh"
     rm git.sh
@@ -132,5 +139,4 @@ if [[ $NAME == "undercloud" || $NAME == "standalone" || $NAME == "node0" ]]; the
         scp $SSH_OPT /tmp/hosts stack@$NAME:/home/stack/hosts
         rm -f /tmp/hosts
     fi
-    ssh $SSH_OPT stack@$NAME "sudo yum install -y tmux emacs-nox vim git"
 fi

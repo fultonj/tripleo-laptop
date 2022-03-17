@@ -1,0 +1,6 @@
+[baseos]
+name=CentOS Stream $releasever - BaseOS
+baseurl=https://composes.stream.centos.org/production/latest-CentOS-Stream/compose/BaseOS/$basearch/os/
+gpgcheck=0
+enabled=1
+gpgkey=file:///etc/pki/rpm-gpg/
