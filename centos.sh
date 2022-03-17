@@ -6,12 +6,16 @@ RAM=8192
 CPU=1
 PASSWD=abc123
 DOM=example.com
-#IMG=CentOS-7-x86_64-GenericCloud.qcow2
-#URL=https://cloud.centos.org/centos/7/images/$IMG.xz
-#OS=rhel7
-IMG=CentOS-Stream-GenericCloud-8-20210210.0.x86_64.qcow2
-URL=https://cloud.centos.org/centos/8-stream/x86_64/images/$IMG
-OS=centos-stream8
+# IMG=CentOS-7-x86_64-GenericCloud.qcow2
+# URL=https://cloud.centos.org/centos/7/images/$IMG.xz
+# OS=rhel7
+# IMG=CentOS-Stream-GenericCloud-8-20210210.0.x86_64.qcow2
+# URL=https://cloud.centos.org/centos/8-stream/x86_64/images/$IMG
+# OS=centos-stream8
+VERSION=9
+IMG=CentOS-Stream-GenericCloud-9-20210830.0.x86_64.qcow2
+URL=https://cloud.centos.org/centos/9-stream/x86_64/images/$IMG
+OS=centos-stream9
 # -------------------------------------------------------
 if [[ ! -e ~/.ssh/id_rsa.pub ]]; then
     echo "Please run ssh-keygen"
@@ -84,13 +88,21 @@ else
     echo "File system size: $SIZE, not growing base image"
 fi
 echo "Creating $NAME from base image $IMG"
-sudo qemu-img create -f qcow2 -b $IMG $NAME.qcow2
+sudo qemu-img create -f qcow2 -F qcow2 -b $IMG $NAME.qcow2
+if [[ ! -e $NAME.qcow2 ]]; then
+    echo "$NAME.qcow2 is missing. Exiting."
+    exit 1
+fi
 sudo virt-customize -a $NAME.qcow2 --run-command 'yum remove cloud-init* -y'
 sudo virt-customize -a $NAME.qcow2 --root-password password:$PASSWD
 sudo virt-customize -a $NAME.qcow2  --hostname $NAME.$DOM
 sudo virt-customize -a $NAME.qcow2 --run-command "echo 'UseDNS no' >> /etc/ssh/sshd_config"
 sudo virt-customize -a $NAME.qcow2 --run-command 'sed -i -e "s/ONBOOT=.*/ONBOOT=no/g" /etc/sysconfig/network-scripts/ifcfg-eth0'
-sudo virt-customize -a $NAME.qcow2 --run-command 'sed -i -e "s/BOOTPROTO=.*/BOOTPROTO=none/g" -e "s/BOOTPROTOv6=.*/NM_CONTROLLED=no/g" -e "s/USERCTL=.*/IPADDR=THE_IP/g" -e "s/PEERDNS=.*/NETMASK=255.255.255.0/g" -e "s/IPV6INIT=.*/GATEWAY=192.168.122.1/g" -e "s/PERSISTENT_DHCLIENT=.*/DEFROUTE=yes/g" /etc/sysconfig/network-scripts/ifcfg-eth1'
+sudo virt-customize -a $NAME.qcow2 --run-command 'sed -i -e "s/BOOTPROTO=.*/BOOTPROTO=none/g" -e "s/USERCTL=.*/IPADDR=THE_IP/g" -e "s/PEERDNS=.*/NETMASK=255.255.255.0/g" -e "s/IPV6INIT=.*/GATEWAY=192.168.122.1/g" -e "s/PERSISTENT_DHCLIENT=.*/DEFROUTE=yes/g" /etc/sysconfig/network-scripts/ifcfg-eth1'
+if [[ ! $VERSION -eq 9 ]]; then
+    sudo virt-customize -a $NAME.qcow2 --run-command 'sed -i -e "s/BOOTPROTOv6=.*/NM_CONTROLLED=no/g" /etc/sysconfig/network-scripts/ifcfg-eth1'
+fi
+
 sudo virt-customize -a $NAME.qcow2 --run-command "sed -i s/THE_IP/$IP/g /etc/sysconfig/network-scripts/ifcfg-eth1"
 sudo virt-customize -a $NAME.qcow2 --run-command "mkdir /root/.ssh/; chmod 700 /root/.ssh/; echo $KEY > /root/.ssh/authorized_keys; chmod 600 /root/.ssh/authorized_keys; chcon system_u:object_r:ssh_home_t:s0 /root/.ssh ; chcon unconfined_u:object_r:ssh_home_t:s0 /root/.ssh/authorized_keys "
 popd
