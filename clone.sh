@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # -------------------------------------------------------
-DISKS=0
+DISKS=3
 DOM=example.com
 NUMBER=0
 if [[ "$1" = "undercloud" || "$1" = "standalone" ]]; then
@@ -119,24 +119,25 @@ if [[ "$1" = "node" ]]; then
     NAME=node0
 fi
 
-if [[ $NAME == "undercloud" || $NAME == "standalone" || $NAME == "node0" ]]; then
-    # install repos for centos9
-    scp $SSH_OPT repos/* stack@$NAME:/tmp/
-    ssh $SSH_OPT root@$NAME "mv /tmp/*.repo /etc/yum.repos.d/"
+for NAME in $(sudo virsh list | awk {'print $2'} | grep -v Name | egrep -v "^$"); do
+    if [[ $NAME == "undercloud" || $NAME == "standalone" || $NAME == "overcloud0" || $NAME == "overcloud1" ]]; then
+        # install repos for centos9
+        scp $SSH_OPT repos/* stack@$NAME:/tmp/
+        ssh $SSH_OPT root@$NAME "mv /tmp/*.repo /etc/yum.repos.d/"
 
-    echo "" > git.sh
-    echo "sudo yum install -y tmux emacs-nox vim git" >> git.sh
-    echo "ssh-keyscan github.com >> ~/.ssh/known_hosts" >> git.sh
-    #echo "git clone git@github.com:fultonj/tripleo-laptop.git" >> git.sh
-    echo "git clone git@github.com:fultonj/xena.git" >> git.sh
-    #echo "git clone git@github.com:fultonj/task-core.git" >> git.sh
-    #echo "git clone git@github.com:fultonj/directord_ceph.git" >> git.sh
+        echo "" > git.sh
+        echo "sudo yum install -y tmux emacs-nox vim git" >> git.sh
+        echo "ssh-keyscan github.com >> ~/.ssh/known_hosts" >> git.sh
+        #echo "git clone git@github.com:fultonj/tripleo-laptop.git" >> git.sh
+        #echo "git clone git@github.com:fultonj/xena.git" >> git.sh
+        echo "git clone git@github.com:fultonj/zed.git" >> git.sh
 
-    scp $SSH_OPT git.sh stack@$NAME:/home/stack/
-    ssh $SSH_OPT stack@$NAME "chmod 755 git.sh"
-    rm git.sh
-    if [[ $NAME == "node0" ]]; then
-        scp $SSH_OPT /tmp/hosts stack@$NAME:/home/stack/hosts
-        rm -f /tmp/hosts
+        scp $SSH_OPT git.sh stack@$NAME:/home/stack/
+        ssh $SSH_OPT stack@$NAME "chmod 755 git.sh"
+        rm git.sh
+        if [[ $NAME == "node0" ]]; then
+            scp $SSH_OPT /tmp/hosts stack@$NAME:/home/stack/hosts
+            rm -f /tmp/hosts
+        fi
     fi
-fi
+done
