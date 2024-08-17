@@ -4,7 +4,7 @@ IP=192.168.122.253
 NAME=centos
 RAM=8192
 CPU=1
-PASSWD=abc123
+PASSWD=redhat
 DOM=example.com
 # IMG=CentOS-7-x86_64-GenericCloud.qcow2
 # URL=https://cloud.centos.org/centos/7/images/$IMG.xz
@@ -16,12 +16,16 @@ VERSION=9
 IMG=CentOS-Stream-GenericCloud-9-20210830.0.x86_64.qcow2
 URL=https://cloud.centos.org/centos/9-stream/x86_64/images/$IMG
 OS=centos-stream9
+
+# OS=rhel8.10
+# OS=rhel9.4
 # -------------------------------------------------------
 if [[ ! -e ~/.ssh/id_rsa.pub ]]; then
     echo "Please run ssh-keygen"
     exit 1
 else
-    KEY=$(cat ~/.ssh/id_ed25519.pub)
+    # KEY=$(cat ~/.ssh/id_ed25519.pub)
+    KEY=$(cat ~/.ssh/id_rsa.pub)
 fi
 if [[ ! -e ~/.ssh/config ]]; then
     cat /dev/null > ~/.ssh/config
@@ -80,10 +84,14 @@ if [[ $SIZE -lt 37 ]]; then  # if we have a new base cloud image grow the filesy
     echo "Customizing base $IMG"
     sudo virt-filesystems --long -h --all -a $IMG
     sudo qemu-img resize $IMG +30G
-    sudo virt-customize -a $IMG --run-command 'echo -e "d\nn\n\n\n\n\nw\n" | fdisk /dev/sda' 2> /dev/null
+    # -e:   Move backup GPT data structures to the end of the disk
+    # -d 1: Delete the first partition
+    # -N 1: Create a new partition using remainder of the disk
+    sudo virt-customize -a $IMG --run-command 'sgdisk -e /dev/sda && sgdisk -d 1 /dev/sda && sgdisk -N 1 /dev/sda'
+    # sudo virt-customize -a $IMG --run-command 'echo -e "d\nn\n\n\n\n\nw\n" | fdisk /dev/sda' 2> /dev/null
     sudo virt-customize -a $IMG --run-command 'xfs_growfs /'
     sudo virt-filesystems --long -h --all -a $IMG
-    sudo virt-customize -a $IMG --run-command 'cp /etc/sysconfig/network-scripts/ifcfg-eth{0,1} && sed -i s/DEVICE=.*/DEVICE=eth1/g /etc/sysconfig/network-scripts/ifcfg-eth1'
+    # sudo virt-customize -a $IMG --run-command 'cp /etc/sysconfig/network-scripts/ifcfg-eth{0,1} && sed -i s/DEVICE=.*/DEVICE=eth1/g /etc/sysconfig/network-scripts/ifcfg-eth1'
 else
     echo "File system size: $SIZE, not growing base image"
 fi
@@ -93,17 +101,17 @@ if [[ ! -e $NAME.qcow2 ]]; then
     echo "$NAME.qcow2 is missing. Exiting."
     exit 1
 fi
-sudo virt-customize -a $NAME.qcow2 --run-command 'yum remove cloud-init* -y'
+sudo virt-customize -a $NAME.qcow2 --run-command 'dnf remove cloud-init* -y'
 sudo virt-customize -a $NAME.qcow2 --root-password password:$PASSWD
 sudo virt-customize -a $NAME.qcow2  --hostname $NAME.$DOM
 sudo virt-customize -a $NAME.qcow2 --run-command "echo 'UseDNS no' >> /etc/ssh/sshd_config"
-sudo virt-customize -a $NAME.qcow2 --run-command 'sed -i -e "s/ONBOOT=.*/ONBOOT=no/g" /etc/sysconfig/network-scripts/ifcfg-eth0'
-sudo virt-customize -a $NAME.qcow2 --run-command 'sed -i -e "s/BOOTPROTO=.*/BOOTPROTO=none/g" -e "s/USERCTL=.*/IPADDR=THE_IP/g" -e "s/PEERDNS=.*/NETMASK=255.255.255.0/g" -e "s/IPV6INIT=.*/GATEWAY=192.168.122.1/g" -e "s/PERSISTENT_DHCLIENT=.*/DEFROUTE=yes/g" /etc/sysconfig/network-scripts/ifcfg-eth1'
-if [[ ! $VERSION -eq 9 ]]; then
-    sudo virt-customize -a $NAME.qcow2 --run-command 'sed -i -e "s/BOOTPROTOv6=.*/NM_CONTROLLED=no/g" /etc/sysconfig/network-scripts/ifcfg-eth1'
-fi
+# sudo virt-customize -a $NAME.qcow2 --run-command 'sed -i -e "s/ONBOOT=.*/ONBOOT=no/g" /etc/sysconfig/network-scripts/ifcfg-eth0'
+# sudo virt-customize -a $NAME.qcow2 --run-command 'sed -i -e "s/BOOTPROTO=.*/BOOTPROTO=none/g" -e "s/USERCTL=.*/IPADDR=THE_IP/g" -e "s/PEERDNS=.*/NETMASK=255.255.255.0/g" -e "s/IPV6INIT=.*/GATEWAY=192.168.122.1/g" -e "s/PERSISTENT_DHCLIENT=.*/DEFROUTE=yes/g" /etc/sysconfig/network-scripts/ifcfg-eth1'
+# if [[ ! $VERSION -eq 9 ]]; then
+#    sudo virt-customize -a $NAME.qcow2 --run-command 'sed -i -e "s/BOOTPROTOv6=.*/NM_CONTROLLED=no/g" /etc/sysconfig/network-scripts/ifcfg-eth1'
+# fi
 
-sudo virt-customize -a $NAME.qcow2 --run-command "sed -i s/THE_IP/$IP/g /etc/sysconfig/network-scripts/ifcfg-eth1"
+# sudo virt-customize -a $NAME.qcow2 --run-command "sed -i s/THE_IP/$IP/g /etc/sysconfig/network-scripts/ifcfg-eth1"
 sudo virt-customize -a $NAME.qcow2 --run-command "mkdir /root/.ssh/; chmod 700 /root/.ssh/; echo $KEY > /root/.ssh/authorized_keys; chmod 600 /root/.ssh/authorized_keys; chcon system_u:object_r:ssh_home_t:s0 /root/.ssh ; chcon unconfined_u:object_r:ssh_home_t:s0 /root/.ssh/authorized_keys "
 popd
 
